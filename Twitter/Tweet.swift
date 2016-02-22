@@ -10,6 +10,7 @@ import UIKit
 
 class Tweet: NSObject {
     
+    var user: User?
     var text: String?
     var name: String?
     var screenName: String?
@@ -19,17 +20,18 @@ class Tweet: NSObject {
     var favoritesCount: Int = 0
     
     init(dictionary: NSDictionary) {
+        user = User(dictionary: dictionary["user"] as! NSDictionary)
         text = dictionary["text"] as? String
         name = dictionary["user"]!["name"] as? String
-        screenName = "@\(dictionary["user"]!["screen_name"] as! String)"
+//        screenName = "@\(dictionary["user"]!["screen_name"] as! String)"
         retweetCount = (dictionary["retweet_count"] as? Int) ?? 0
-        favoritesCount = (dictionary["favourites_count"] as? Int) ?? 0
+        favoritesCount = (dictionary["favorite_count"] as? Int) ?? 0
         print("init")
-        print(dictionary["user"]!["profile_image_url"])
-        let profileUrlString = dictionary["user"]!["profile_image_url"] as? String
-        if let profileUrlString = profileUrlString {
-            profileUrl = NSURL(string: profileUrlString)
-        }
+//        print(dictionary["user"]!["profile_image_url"])
+//        let profileUrlString = dictionary["user"]!["profile_image_url"] as? String
+//        if let profileUrlString = profileUrlString {
+//            profileUrl = NSURL(string: profileUrlString)
+//        }
         let timeStampString = dictionary["created_at"] as? String
         
         if let timeStampString = timeStampString {

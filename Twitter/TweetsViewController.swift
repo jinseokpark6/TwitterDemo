@@ -9,6 +9,8 @@
 import UIKit
 
 class TweetsViewController: UIViewController {
+    
+
 
     @IBOutlet weak var tableView: UITableView!
     var tweets: [Tweet]!
@@ -22,6 +24,7 @@ class TweetsViewController: UIViewController {
         // used for scroll height
         tableView.estimatedRowHeight = 120
         tableView.tableFooterView = UIView()
+
 
         
         TwitterClient.sharedInstance.homeTimeline({ (tweets: [Tweet]) -> () in
@@ -75,7 +78,7 @@ extension TweetsViewController: UITableViewDataSource, UITableViewDelegate {
             let tweet = self.tweets[indexPath.row]
             cell.userNameLabel.text = tweet.name
             cell.userIdLabel.text = tweet.screenName
-            if let profileURL = tweet.profileUrl {
+            if let profileURL = tweet.user?.profileURL {
                 print("urlurl")
                 print(profileURL)
                 cell.userImageView.setImageWithURL(profileURL)
@@ -88,7 +91,26 @@ extension TweetsViewController: UITableViewDataSource, UITableViewDelegate {
             cell.likeImageView.image = UIImage(named: "Like.png")
             cell.shareImageView.image = UIImage(named: "Share.png")
             cell.retweetImageView2.image = UIImage(named: "Retweet.png")
+            cell.retweetCountLabel.text = "\(tweet.retweetCount)"
+            cell.likeCountLabel.text = "\(tweet.favoritesCount)"
         }
+        
+        // add gesture recognizer
+        let retweetTapGestureRecognizer = UITapGestureRecognizer()
+        retweetTapGestureRecognizer.addTarget(self, action: "retweetTapped:")
+        cell.retweetImageView2.addGestureRecognizer(retweetTapGestureRecognizer)
+        cell.retweetImageView2.userInteractionEnabled = true
+        
+        let shareTapGestureRecognizer = UITapGestureRecognizer()
+        shareTapGestureRecognizer.addTarget(self, action: "shareTapped:")
+        cell.shareImageView.addGestureRecognizer(shareTapGestureRecognizer)
+        cell.shareImageView.userInteractionEnabled = true
+        
+        let likeTapGestureRecognizer = UITapGestureRecognizer()
+        likeTapGestureRecognizer.addTarget(self, action: "likeTapped:")
+        cell.likeImageView.addGestureRecognizer(likeTapGestureRecognizer)
+        cell.likeImageView.userInteractionEnabled = true
+
         
         return cell
     }
@@ -101,4 +123,38 @@ extension TweetsViewController: UITableViewDataSource, UITableViewDelegate {
             return 0
         }
     }
+    
+    func retweetTapped(sender: AnyObject) {
+        print("retweet?")
+        let point: CGPoint = sender.locationInView(self.tableView)
+        print(point)
+        let indexPath = tableView.indexPathForRowAtPoint(point)
+        let cell = tableView.cellForRowAtIndexPath(indexPath!) as! TweetCell
+        let count = Int(cell.retweetCountLabel.text!)
+        cell.retweetCountLabel.text = "\(count!+1)"
+//        TwitterClient.sharedInstance.retweetTweet(User.currentUser!.id) { (tweet, error) -> () in
+//            print("retweeted")
+//        }
+    }
+    
+    func shareTapped(sender: AnyObject) {
+        print("share")
+        
+    }
+    
+    func likeTapped(sender: AnyObject) {
+        print("like")
+        let point: CGPoint = sender.locationInView(self.tableView)
+        print(point)
+        let indexPath = tableView.indexPathForRowAtPoint(point)
+        let cell = tableView.cellForRowAtIndexPath(indexPath!) as! TweetCell
+        let count = Int(cell.likeCountLabel.text!)
+        cell.likeCountLabel.text = "\(count!+1)"
+
+//        TwitterClient.sharedInstance.favoriteTweet(User.currentUser!.id) { (tweet, error) -> () in
+//            print("liked")
+//            
+//        }
+    }
+
 }

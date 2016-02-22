@@ -37,8 +37,8 @@ class TwitterClient: BDBOAuth1RequestOperationManager {
         TwitterClient.sharedInstance.POST("1.1/favorites/create.json?id=\(id!)", parameters: nil, success: { (operation: AFHTTPRequestOperation!, response: AnyObject!) -> Void in
             let tweet = Tweet(dictionary: response as! NSDictionary)
             completion(tweet: tweet, error: nil)
-            }, failure: { (operation: AFHTTPRequestOperation!, error: NSError!) -> Void in
-                print("failed at favoriting")
+            }, failure: { (operation: AFHTTPRequestOperation?, error: NSError!) -> Void in
+                print("failed at adding favorite")
                 completion(tweet: nil, error: error)
         })
     }
@@ -47,11 +47,12 @@ class TwitterClient: BDBOAuth1RequestOperationManager {
         TwitterClient.sharedInstance.POST("1.1/statuses/retweet/\(id!).json", parameters: nil, success: { (operation: AFHTTPRequestOperation!, response: AnyObject!) -> Void in
             let tweet = Tweet(dictionary: response as! NSDictionary)
             completion(tweet: tweet, error: nil)
-            }, failure: { (operation: AFHTTPRequestOperation!, error: NSError!) -> Void in
-                print("failed at favoriting")
+            }, failure: { (operation: AFHTTPRequestOperation?, error: NSError!) -> Void in
+                print("failed at adding tweet")
                 completion(tweet: nil, error: error)
         })
     }
+
 
     func openURL(url: NSURL) {
         
