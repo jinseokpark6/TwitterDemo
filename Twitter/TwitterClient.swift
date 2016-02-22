@@ -15,48 +15,87 @@ let twitterConsumerSecret = "FPOMi1TF4lW35dBDirn8mE1pxNqqRgffAGrk5O30UYbju6a0Pi"
 
 
 class TwitterClient: BDBOAuth1RequestOperationManager {
+    
+    
+    static let sharedInstance = TwitterClient(
+        baseURL: twitterBaseUrl,
+        consumerKey: twitterConsumerKey,
+        consumerSecret: twitterConsumerSecret)
 
-    class var sharedInstance: TwitterClient {
-        struct Static {
-            static let instance = TwitterClient(
-                baseURL: twitterBaseUrl,
-                consumerKey: twitterConsumerKey,
-                consumerSecret: twitterConsumerSecret)
-        }
-        
-        return Static.instance
-    }
+//    class var sharedInstance: TwitterClient {
+//        struct Static {
+//        }
+//        
+//        return Static.instance
+//    }
+    
+    var loginSuccess: (() -> ())?
+    var loginFailure: ((NSError) -> ())?
     
     func openURL(url: NSURL) {
         
+        let client = TwitterClient.sharedInstance
 
-        TwitterClient.sharedInstance.fetchAccessTokenWithPath("oauth/access_token", method: "POST", requestToken: BDBOAuth1Credential(queryString: url.query), success: { (accessToken: BDBOAuth1Credential!) -> Void in
+        client.fetchAccessTokenWithPath("oauth/access_token", method: "POST", requestToken: BDBOAuth1Credential(queryString: url.query), success: { (accessToken: BDBOAuth1Credential!) -> Void in
             
             print("Got the access token!")
-            TwitterClient.sharedInstance.requestSerializer.saveAccessToken(accessToken)
-            
-            TwitterClient.sharedInstance.GET("1.1/account/verify_credentials.json", parameters: nil, success: { (operation: AFHTTPRequestOperation!, response: AnyObject!) -> Void in
-                print("user: \(response)")
-                
-                }, failure: { (operation: AFHTTPRequestOperation?, error: NSError!) -> Void in
-                    print("error getting user")
+            client.requestSerializer.saveAccessToken(accessToken)
+            client.currentAccount({ (user: User) -> () in
+                User.currentUser = user
+                self.loginSuccess?()
+            }, failure: { (error: NSError) -> () in
+                self.loginFailure?(error)
+            })
+            client.homeTimeline({ (tweets: [Tweet]) -> () in
+                for tweet in tweets {
+                    print(tweet.text)
+                }
+                }, failure: { (error: NSError) -> () in
+                    print(error.localizedDescription)
             })
             
-            TwitterClient.sharedInstance.GET("1.1/statuses/home_timeline.json", parameters: nil, success: { (operation: AFHTTPRequestOperation!, response: AnyObject!) -> Void in
-                print("Timeline: \(response)")
-                
-                }, failure: { (operation: AFHTTPRequestOperation?, error: NSError!) -> Void in
-                    print("error getting timeline")
-            })
-
+            self.loginSuccess?()
             
-            }) { (error: NSError!) -> Void in
-                print("Failed to receive access token")
+            
+        }) { (error: NSError!) -> Void in
+            print("Failed to receive access token")
+            
+            self.loginFailure?(error)
         }
 
     }
     
-    func login() {
+    func currentAccount(success: (User) -> (), failure: (NSError) -> ()) {
+        TwitterClient.sharedInstance.GET("1.1/account/verify_credentials.json", parameters: nil, success: { (operation: AFHTTPRequestOperation!, response: AnyObject!) -> Void in
+            print("user: \(response)")
+            let userDictionary = response as! NSDictionary
+            let user = User(dictionary: userDictionary)
+            
+            success(user)
+            
+        }, failure: { (operation: AFHTTPRequestOperation?, error: NSError!) -> Void in
+            failure(error)
+        })
+    }
+    
+    func homeTimeline(success: ([Tweet]) -> (), failure: (NSError) -> ()) {
+
+        TwitterClient.sharedInstance.GET("1.1/statuses/home_timeline.json", parameters: nil, success: { (operation: AFHTTPRequestOperation!, response: AnyObject!) -> Void in
+            
+            let dictionaries = response as! [NSDictionary]
+            let tweets = Tweet.tweetsWithArray(dictionaries)
+            success(tweets)
+            
+        }, failure: { (operation: AFHTTPRequestOperation?, error: NSError!) -> Void in
+            failure(error)
+        })
+
+    }
+    
+    func login(success: () -> (), failure: (NSError) -> ()) {
+        
+        loginSuccess = success
+        loginFailure = failure
         
         TwitterClient.sharedInstance.requestSerializer.removeAccessToken()
         TwitterClient.sharedInstance.fetchRequestTokenWithPath("oauth/request_token", method: "GET", callbackURL: NSURL(string: "cputwitterdemo://oauth"), scope: nil, success: { (requestToken: BDBOAuth1Credential!) -> Void in
@@ -66,13 +105,21 @@ class TwitterClient: BDBOAuth1RequestOperationManager {
             
             UIApplication.sharedApplication().openURL(authURL!)
             
-            }) { (error: NSError!) -> Void in
-                print ("failed to get request token.")
-                //                self.loginCompletion?(user: nil, error: error)
-                
+        }) { (error: NSError!) -> Void in
+            print ("failed to get request token.")
+            self.loginFailure?(error)
+            
                 
         }
 
+    }
+    
+    func logout() {
+        User.currentUser = nil
+        deauthorize()
+        
+        NSNotificationCenter.defaultCenter().postNotificationName(User.userDidLogoutNotification, object: nil)
+        
     }
 
 
