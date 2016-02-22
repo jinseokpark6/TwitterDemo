@@ -14,7 +14,7 @@ class Tweet: NSObject {
     var name: String?
     var screenName: String?
     var timeStamp: NSDate?
-    var profileUrl: String?
+    var profileUrl: NSURL?
     var retweetCount: Int = 0
     var favoritesCount: Int = 0
     
@@ -26,7 +26,10 @@ class Tweet: NSObject {
         favoritesCount = (dictionary["favourites_count"] as? Int) ?? 0
         print("init")
         print(dictionary["user"]!["profile_image_url"])
-        profileUrl = dictionary["user"]!["profile_image_url"] as? String
+        let profileUrlString = dictionary["user"]!["profile_image_url"] as? String
+        if let profileUrlString = profileUrlString {
+            profileUrl = NSURL(string: profileUrlString)
+        }
         let timeStampString = dictionary["created_at"] as? String
         
         if let timeStampString = timeStampString {

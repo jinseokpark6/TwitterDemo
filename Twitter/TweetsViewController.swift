@@ -18,6 +18,11 @@ class TweetsViewController: UIViewController {
         
         tableView.delegate = self
         tableView.dataSource = self
+        tableView.rowHeight = UITableViewAutomaticDimension
+        // used for scroll height
+        tableView.estimatedRowHeight = 120
+        tableView.tableFooterView = UIView()
+
         
         TwitterClient.sharedInstance.homeTimeline({ (tweets: [Tweet]) -> () in
             
@@ -63,20 +68,26 @@ extension TweetsViewController: UITableViewDataSource, UITableViewDelegate {
     func tableView(tableView: UITableView, cellForRowAtIndexPath indexPath: NSIndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCellWithIdentifier("TweetCell", forIndexPath: indexPath) as! TweetCell
         
-        cell.textLabel?.numberOfLines = 0
-        print("text")
-        print(self.tweets[indexPath.row].text)
+        cell.selectionStyle = UITableViewCellSelectionStyle.None
+
+        
         if self.tweets != nil {
             let tweet = self.tweets[indexPath.row]
             cell.userNameLabel.text = tweet.name
             cell.userIdLabel.text = tweet.screenName
             if let profileURL = tweet.profileUrl {
-                cell.imageView?.setImageWithURL(NSURL(string: profileURL)!)
+                print("urlurl")
+                print(profileURL)
+                cell.userImageView.setImageWithURL(profileURL)
             }
+
             let formatter = NSDateFormatter()
             formatter.dateFormat = "MM/dd"
             cell.timeLabel.text = formatter.stringFromDate(tweet.timeStamp!)
             cell.tweetLabel.text = tweet.text
+            cell.likeImageView.image = UIImage(named: "Like.png")
+            cell.shareImageView.image = UIImage(named: "Share.png")
+            cell.retweetImageView2.image = UIImage(named: "Retweet.png")
         }
         
         return cell
