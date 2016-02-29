@@ -31,9 +31,6 @@ class TweetsViewController: UIViewController {
             
             self.tweets = tweets
             
-            for tweet in tweets {
-                print(tweet.text)
-            }
             self.tableView.reloadData()
             
             }) { (error: NSError) -> () in
@@ -53,16 +50,13 @@ class TweetsViewController: UIViewController {
         TwitterClient.sharedInstance.logout()
         
     }
-
-    /*
-    // MARK: - Navigation
-
-    // In a storyboard-based application, you will often want to do a little preparation before navigation
     override func prepareForSegue(segue: UIStoryboardSegue, sender: AnyObject?) {
-        // Get the new view controller using segue.destinationViewController.
-        // Pass the selected object to the new view controller.
+        let vc = segue.destinationViewController as! TweetDetailViewController
+        vc.tweet = sender as! Tweet
+        
+        
     }
-    */
+
 
 }
 
@@ -71,16 +65,17 @@ extension TweetsViewController: UITableViewDataSource, UITableViewDelegate {
     func tableView(tableView: UITableView, cellForRowAtIndexPath indexPath: NSIndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCellWithIdentifier("TweetCell", forIndexPath: indexPath) as! TweetCell
         
-        cell.selectionStyle = UITableViewCellSelectionStyle.None
+//        cell.selectionStyle = UITableViewCellSelectionStyle.None
 
         
         if self.tweets != nil {
             let tweet = self.tweets[indexPath.row]
+            cell.tweet = tweet
             cell.userNameLabel.text = tweet.name
+            print("username")
+            print(cell.userNameLabel.text)
             cell.userIdLabel.text = tweet.screenName
             if let profileURL = tweet.user?.profileURL {
-                print("urlurl")
-                print(profileURL)
                 cell.userImageView.setImageWithURL(profileURL)
             }
 
@@ -88,11 +83,18 @@ extension TweetsViewController: UITableViewDataSource, UITableViewDelegate {
             formatter.dateFormat = "MM/dd"
             cell.timeLabel.text = formatter.stringFromDate(tweet.timeStamp!)
             cell.tweetLabel.text = tweet.text
-            cell.likeImageView.image = UIImage(named: "Like.png")
-            cell.shareImageView.image = UIImage(named: "Share.png")
-            cell.retweetImageView2.image = UIImage(named: "Retweet.png")
             cell.retweetCountLabel.text = "\(tweet.retweetCount)"
             cell.likeCountLabel.text = "\(tweet.favoritesCount)"
+            if tweet.favorited == 1 {
+                cell.likeImageView.tintColor = UIColor(red: 1.0, green: 199/255.0, blue: 38/255.0, alpha: 1.0)
+            } else {
+                cell.likeImageView.tintColor = UIColor.lightGrayColor()
+            }
+            if tweet.retweeted == 1 {
+                cell.retweetImageView2.tintColor = UIColor(red: 1.0, green: 199/255.0, blue: 38/255.0, alpha: 1.0)
+            } else {
+                cell.retweetImageView2.tintColor = UIColor.lightGrayColor()
+            }
         }
         
         // add gesture recognizer
@@ -117,24 +119,40 @@ extension TweetsViewController: UITableViewDataSource, UITableViewDelegate {
     
     func tableView(tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         if self.tweets != nil {
-            print(self.tweets.count)
             return self.tweets.count
         } else {
             return 0
         }
     }
     
+    func tableView(tableView: UITableView, didSelectRowAtIndexPath indexPath: NSIndexPath) {
+        tableView.deselectRowAtIndexPath(indexPath, animated: true)
+        
+        
+        let cell = tableView.cellForRowAtIndexPath(indexPath) as! TweetCell
+        self.performSegueWithIdentifier("goToTweetDetail", sender: cell.tweet)
+    }
+    
     func retweetTapped(sender: AnyObject) {
-        print("retweet?")
         let point: CGPoint = sender.locationInView(self.tableView)
-        print(point)
         let indexPath = tableView.indexPathForRowAtPoint(point)
         let cell = tableView.cellForRowAtIndexPath(indexPath!) as! TweetCell
         let count = Int(cell.retweetCountLabel.text!)
-        cell.retweetCountLabel.text = "\(count!+1)"
-//        TwitterClient.sharedInstance.retweetTweet(User.currentUser!.id) { (tweet, error) -> () in
-//            print("retweeted")
-//        }
+        if cell.retweetImageView2.tintColor == UIColor.lightGrayColor() {
+            cell.retweetCountLabel.text = "\(count!+1)"
+            let params = ["id": cell.tweet.id!] as NSDictionary
+            TwitterClient.sharedInstance.retweetWithId(cell.tweet, params: params) { () -> () in
+                print("successfully retweeted!")
+            }
+            cell.retweetImageView2.tintColor = UIColor(red: 1.0, green: 199/255.0, blue: 38/255.0, alpha: 1.0)
+        } else {
+            cell.retweetCountLabel.text = "\(count!-1)"
+            let params = ["id": cell.tweet.id!] as NSDictionary
+            TwitterClient.sharedInstance.unretweetWithId(cell.tweet, params: params, completion: { () -> () in
+                print("successfully unretweeted!")
+            })
+            cell.retweetImageView2.tintColor = UIColor.lightGrayColor()
+        }
     }
     
     func shareTapped(sender: AnyObject) {
@@ -143,18 +161,26 @@ extension TweetsViewController: UITableViewDataSource, UITableViewDelegate {
     }
     
     func likeTapped(sender: AnyObject) {
-        print("like")
         let point: CGPoint = sender.locationInView(self.tableView)
-        print(point)
         let indexPath = tableView.indexPathForRowAtPoint(point)
         let cell = tableView.cellForRowAtIndexPath(indexPath!) as! TweetCell
         let count = Int(cell.likeCountLabel.text!)
-        cell.likeCountLabel.text = "\(count!+1)"
+        if cell.likeImageView.tintColor == UIColor.lightGrayColor() {
+            cell.likeCountLabel.text = "\(count!+1)"
+            let params = ["id": cell.tweet.id!] as NSDictionary
+            TwitterClient.sharedInstance.favoriteTweet(cell.tweet, params: params) { () -> () in
+                print("successfully liked!")
+            }
+            cell.likeImageView.tintColor = UIColor(red: 1.0, green: 199/255.0, blue: 38/255.0, alpha: 1.0)
+        } else {
+            cell.likeCountLabel.text = "\(count!-1)"
+            let params = ["id": cell.tweet.id!] as NSDictionary
+            TwitterClient.sharedInstance.unfavoriteTweet(cell.tweet, params: params, completion: { () -> () in
+                print("successfully unliked!")
+            })
+            cell.likeImageView.tintColor = UIColor.lightGrayColor()
+        }
 
-//        TwitterClient.sharedInstance.favoriteTweet(User.currentUser!.id) { (tweet, error) -> () in
-//            print("liked")
-//            
-//        }
     }
 
 }

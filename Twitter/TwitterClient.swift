@@ -33,23 +33,61 @@ class TwitterClient: BDBOAuth1RequestOperationManager {
     var loginFailure: ((NSError) -> ())?
     
     
-    func favoriteTweet(id: String?, completion: (tweet: Tweet?, error: NSError?) -> ()) {
-        TwitterClient.sharedInstance.POST("1.1/favorites/create.json?id=\(id!)", parameters: nil, success: { (operation: AFHTTPRequestOperation!, response: AnyObject!) -> Void in
-            let tweet = Tweet(dictionary: response as! NSDictionary)
-            completion(tweet: tweet, error: nil)
-            }, failure: { (operation: AFHTTPRequestOperation?, error: NSError!) -> Void in
-                print("failed at adding favorite")
-                completion(tweet: nil, error: error)
+    func favoriteTweet(tweet: Tweet, params: NSDictionary?, completion: () ->()) {
+        POST("1.1/favorites/create.json", parameters:params, success: { (operation: AFHTTPRequestOperation!, response: AnyObject?) -> Void in
+            print("Favorited tweet: \(tweet.id)")
+            tweet.favorited = 1
+            let dict = response as! NSDictionary
+            tweet.favoritesCount += 1
+            completion()
+            
+            }, failure: { (operation: AFHTTPRequestOperation?, error:NSError) -> Void in
+                print("Failed to favorite: \(error)")
+        })
+    }
+    func retweetWithId(tweet: Tweet, params: NSDictionary?, completion: () ->()) {
+        POST("1.1/statuses/retweet/\(tweet.id!).json", parameters:params, success: { (operation: AFHTTPRequestOperation!, response: AnyObject?) -> Void in
+            print("Retweeted tweet: \(tweet.id)")
+            tweet.retweeted = 1
+            let dict = response as! NSDictionary
+            tweet.retweetCount = dict["retweet_count"] as! Int
+            completion()
+            
+            
+            }, failure: { (operation: AFHTTPRequestOperation?, error: NSError) -> Void in
+                print("Failed to retweet: \(error)")
         })
     }
     
-    func retweetTweet(id: String?, completion: (tweet: Tweet?, error: NSError?) -> ()) {
-        TwitterClient.sharedInstance.POST("1.1/statuses/retweet/\(id!).json", parameters: nil, success: { (operation: AFHTTPRequestOperation!, response: AnyObject!) -> Void in
-            let tweet = Tweet(dictionary: response as! NSDictionary)
-            completion(tweet: tweet, error: nil)
-            }, failure: { (operation: AFHTTPRequestOperation?, error: NSError!) -> Void in
-                print("failed at adding tweet")
-                completion(tweet: nil, error: error)
+    
+    func unretweetWithId(tweet: Tweet, params: NSDictionary?, completion: () ->()) {
+        
+        POST("1.1/statuses/unretweet/\(tweet.id!).json", parameters:params, success: { (operation: AFHTTPRequestOperation!, response: AnyObject?) -> Void in
+            print("Unretweeted tweet: \(tweet.id)")
+            tweet.retweeted = 0
+            let dict = response as! NSDictionary
+            tweet.retweetCount = dict["retweet_count"] as! Int - 1
+            print(dict["retweet_count"])
+            completion()
+            
+            
+            
+            }, failure: { (operation: AFHTTPRequestOperation?, error:NSError) -> Void in
+                print("Failed to unretweet: \(error)")
+        })
+    }
+    
+    
+    func unfavoriteTweet(tweet: Tweet, params: NSDictionary?, completion: () ->()) {
+        POST("1.1/favorites/destroy.json", parameters:params, success: { (operation: AFHTTPRequestOperation!, response: AnyObject?) -> Void in
+            print("Unfavorited tweet: \(tweet.id)")
+            tweet.favorited = 0
+            let dict = response as! NSDictionary
+            tweet.favoritesCount -= 1
+            completion()
+            
+            }, failure: { (operation: AFHTTPRequestOperation?, error:NSError) -> Void in
+                print("Failed to unfavorite: \(error)")
         })
     }
 
@@ -70,8 +108,9 @@ class TwitterClient: BDBOAuth1RequestOperationManager {
             })
             client.homeTimeline({ (tweets: [Tweet]) -> () in
                 for tweet in tweets {
-                    print(tweet.text)
+                    print(tweet)
                 }
+
                 }, failure: { (error: NSError) -> () in
                     print(error.localizedDescription)
             })
@@ -89,10 +128,18 @@ class TwitterClient: BDBOAuth1RequestOperationManager {
     
     func currentAccount(success: (User) -> (), failure: (NSError) -> ()) {
         TwitterClient.sharedInstance.GET("1.1/account/verify_credentials.json", parameters: nil, success: { (operation: AFHTTPRequestOperation!, response: AnyObject!) -> Void in
-            print("user: \(response)")
             let userDictionary = response as! NSDictionary
             let user = User(dictionary: userDictionary)
-            
+            user.dictionary = userDictionary
+            user.id = userDictionary["id_str"] as? String
+            user.name = userDictionary["name"] as? String
+            user.screenName = userDictionary["screen_name"] as? String
+            let profileURLString = userDictionary["profile_image_url_https"] as? String
+            if let profileURLString = profileURLString {
+                user.profileURL = NSURL(string: profileURLString)
+            }
+            user.tagline = userDictionary["description"] as? String
+
             success(user)
             
         }, failure: { (operation: AFHTTPRequestOperation?, error: NSError!) -> Void in

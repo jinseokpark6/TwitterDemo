@@ -11,18 +11,16 @@ import UIKit
 class User: NSObject {
     
     var id: String?
-    var name: NSString?
-    var screenName: NSString?
+    var name: String?
+    var screenName: String?
     var profileURL: NSURL?
-    var tagline: NSString?
+    var tagline: String?
     
     var dictionary: NSDictionary?
     
     init(dictionary: NSDictionary) {
         self.dictionary = dictionary
-        
-        
-        id = dictionary["id"] as? String
+        id = dictionary["id_str"] as? String
         name = dictionary["name"] as? String
         screenName = dictionary["screen_name"] as? String
         let profileURLString = dictionary["profile_image_url_https"] as? String
@@ -30,7 +28,9 @@ class User: NSObject {
             profileURL = NSURL(string: profileURLString)
         }
         tagline = dictionary["description"] as? String
+
     }
+    
     
     static let userDidLogoutNotification = "UserDidLogout"
 

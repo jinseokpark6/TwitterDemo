@@ -11,6 +11,7 @@ import UIKit
 class Tweet: NSObject {
     
     var user: User?
+    var id: Int?
     var text: String?
     var name: String?
     var screenName: String?
@@ -18,20 +19,19 @@ class Tweet: NSObject {
     var profileUrl: NSURL?
     var retweetCount: Int = 0
     var favoritesCount: Int = 0
+    var retweeted: Int?
+    var favorited: Int?
     
     init(dictionary: NSDictionary) {
         user = User(dictionary: dictionary["user"] as! NSDictionary)
+        id = dictionary["id"] as? Int
         text = dictionary["text"] as? String
-        name = dictionary["user"]!["name"] as? String
-//        screenName = "@\(dictionary["user"]!["screen_name"] as! String)"
+        name = dictionary["name"] as? String
+        
         retweetCount = (dictionary["retweet_count"] as? Int) ?? 0
         favoritesCount = (dictionary["favorite_count"] as? Int) ?? 0
-        print("init")
-//        print(dictionary["user"]!["profile_image_url"])
-//        let profileUrlString = dictionary["user"]!["profile_image_url"] as? String
-//        if let profileUrlString = profileUrlString {
-//            profileUrl = NSURL(string: profileUrlString)
-//        }
+        retweeted = dictionary["retweeted"] as? Int
+        favorited = dictionary["favorited"] as? Int
         let timeStampString = dictionary["created_at"] as? String
         
         if let timeStampString = timeStampString {
@@ -47,7 +47,6 @@ class Tweet: NSObject {
         for dictionary in dictionaries {
             let tweet = Tweet(dictionary: dictionary)
             tweets.append(tweet)
-            print(dictionary)
         }
         
         return tweets

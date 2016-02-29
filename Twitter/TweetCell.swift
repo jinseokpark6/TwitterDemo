@@ -23,6 +23,7 @@ class TweetCell: UITableViewCell {
     @IBOutlet weak var retweetImageView2: UIImageView!
     @IBOutlet weak var likeImageView: UIImageView!
     @IBOutlet weak var likeCountLabel: UILabel!
+    var tweet: Tweet!
     
     override func awakeFromNib() {
         super.awakeFromNib()
@@ -32,6 +33,13 @@ class TweetCell: UITableViewCell {
         userImageView.layer.cornerRadius = 3
         userImageView.clipsToBounds = true
 
+        shareImageView.image = UIImage(named: "Share.png")
+        let likeImage = UIImage(named: "LikeIcon.png");
+        let likeTintedImage = likeImage?.imageWithRenderingMode(UIImageRenderingMode.AlwaysTemplate)
+        likeImageView.image = likeTintedImage
+        let retweetImage = UIImage(named: "RetweetIcon.png");
+        let retweetTintedImage = retweetImage?.imageWithRenderingMode(UIImageRenderingMode.AlwaysTemplate)
+        retweetImageView2.image = retweetTintedImage
 
     }
     
