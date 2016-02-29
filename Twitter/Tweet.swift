@@ -26,7 +26,6 @@ class Tweet: NSObject {
         user = User(dictionary: dictionary["user"] as! NSDictionary)
         id = dictionary["id"] as? Int
         text = dictionary["text"] as? String
-        name = dictionary["name"] as? String
         
         retweetCount = (dictionary["retweet_count"] as? Int) ?? 0
         favoritesCount = (dictionary["favorite_count"] as? Int) ?? 0
@@ -47,6 +46,7 @@ class Tweet: NSObject {
         for dictionary in dictionaries {
             let tweet = Tweet(dictionary: dictionary)
             tweets.append(tweet)
+            print(dictionary)
         }
         
         return tweets

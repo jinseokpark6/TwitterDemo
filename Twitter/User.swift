@@ -15,6 +15,9 @@ class User: NSObject {
     var screenName: String?
     var profileURL: NSURL?
     var tagline: String?
+    var following: Int?
+    var followers: Int?
+    var statuses: Int?
     
     var dictionary: NSDictionary?
     
@@ -28,6 +31,9 @@ class User: NSObject {
             profileURL = NSURL(string: profileURLString)
         }
         tagline = dictionary["description"] as? String
+        statuses = dictionary["statuses_count"] as? Int
+        following = dictionary["friends_count"] as? Int
+        followers = dictionary["followers_count"] as? Int
 
     }
     

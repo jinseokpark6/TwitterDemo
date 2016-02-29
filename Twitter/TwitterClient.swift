@@ -161,6 +161,21 @@ class TwitterClient: BDBOAuth1RequestOperationManager {
 
     }
     
+    func userTimeline(params: NSDictionary, success: ([Tweet]) -> (), failure: (NSError) -> ()) {
+        
+        TwitterClient.sharedInstance.GET("1.1/statuses/user_timeline.json", parameters: params, success: { (operation: AFHTTPRequestOperation!, response: AnyObject!) -> Void in
+            
+            let dictionaries = response as! [NSDictionary]
+            let tweets = Tweet.tweetsWithArray(dictionaries)
+            success(tweets)
+            
+            }, failure: { (operation: AFHTTPRequestOperation?, error: NSError!) -> Void in
+                failure(error)
+        })
+        
+    }
+
+    
     func login(success: () -> (), failure: (NSError) -> ()) {
         
         loginSuccess = success
@@ -182,6 +197,29 @@ class TwitterClient: BDBOAuth1RequestOperationManager {
         }
 
     }
+    
+    func statusUpdate(params: NSDictionary) {
+        POST("1.1/statuses/update.json", parameters:params, success: { (operation: AFHTTPRequestOperation!, response: AnyObject?) -> Void in
+            print("status updates")
+            
+            }, failure: { (operation: AFHTTPRequestOperation?, error:NSError) -> Void in
+                print("error getting home timeline")
+        })
+
+    }
+    
+    func reply(params: NSDictionary) {
+        
+        POST("1.1/direct_messages/new.json", parameters:params, success: { (operation: AFHTTPRequestOperation!, response: AnyObject?) -> Void in
+            print("replied")
+            
+            }, failure: { (operation: AFHTTPRequestOperation?, error:NSError) -> Void in
+                print("faild to message")
+        })
+
+    }
+
+
     
     func logout() {
         User.currentUser = nil
